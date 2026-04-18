@@ -1,6 +1,26 @@
 (function() {
     'use strict';
 
+    // Page Initialization Logic (Matrix -> Glitch Reveal)
+    const glitchOverlay = document.getElementById('glitchOverlay');
+    
+    if (glitchOverlay) {
+        // Trigger interference flash immediately
+        setTimeout(() => {
+            glitchOverlay.classList.add('glitch-flash');
+            
+            // Fast reveal
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+                
+                // Final cleanup of overlay
+                setTimeout(() => {
+                    glitchOverlay.style.display = 'none';
+                }, 1000);
+            }, 300);
+        }, 100); 
+    }
+
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
 
@@ -76,8 +96,8 @@
             setTimeout(typeRole, typingDelay);
         }
         
-        // Start typing effect after initial delay
-        setTimeout(typeRole, 1500); 
+        // Start typing effect after reveal has stabilized
+        setTimeout(typeRole, 2000); 
     }
 
     // Matrix Rain Effect
