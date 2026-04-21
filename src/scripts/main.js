@@ -61,10 +61,9 @@
         const roles = [
             "Building Scalable Backend Systems",
             "Defeating Advanced Anti-Bot Protections",
-            "Architecting Distributed Systems",
+            "Continuous Learner",
             "Fortifying System Security & Integrity",
-            "Optimizing High-Concurrency Performance",
-            "Open Source Engineer"
+            "Establishing Engineering Best Practices"
         ];
         
         let roleIndex = 0;
