@@ -19,11 +19,11 @@ Specialized in engineering Python-based server-side foundations and advanced hea
 ### Featured Projects
 
 - **[Fingrasp](https://github.com/KrAsH-CoD3/Fingrasp)** – A browser-fingerprint intelligence platform designed to differentiate between legitimate hardware and simulated environments using entropy research and SHA-256 composite hashing.
-- **TheBotify Framework** – A specialized browser automation library designed to mimic human interactions through stealthy mouse movements, randomized temporal logic, and cross-platform detection avoidance.
 - **[WhatsApp Status Monitor](https://github.com/KrAsH-CoD3/WhatsApp-Status-Checker)** – An automation tool that continuously monitors contact status updates and sends programmatic alerts via WhatsApp at specified intervals.
 - **[Autobet System](https://github.com/KrAsH-CoD3/Betking-VF-Autobet)** – A high-performance automation engine for autonomous execution of virtual football bets based on Realnaps predictions, optimized for real-time stake management.
 - **[BotasHuman](https://github.com/KrAsH-CoD3/botashuman)** – A universal web orchestration platform with a zero-detection footprint, bypassing advanced anti-bot defenses through indistinguishable human-interaction patterns.
 - **[Trading Automator](https://github.com/KrAsH-CoD3/Plu-Auto-Trading)** – A high-precision trading engine that automatically executes trades at pre-defined intervals, focusing on temporal reliability and automated stake management.
+- **TheBotify Framework** – A specialized browser automation library designed to mimic human interactions through stealthy mouse movements, randomized temporal logic, and cross-platform detection avoidance.
 
 ### Open Source Contributions
 
