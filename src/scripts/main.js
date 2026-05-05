@@ -279,9 +279,13 @@
 
         window.addEventListener('resize', () => {
             resizeCanvas();
-            columns = canvas.width / fontSize;
-            while (drops.length < columns) {
-                drops.push(Math.random() * -100);
+            columns = Math.floor(canvas.width / fontSize);
+            if (drops.length < columns) {
+                while (drops.length < columns) {
+                    drops.push(Math.random() * -100);
+                }
+            } else {
+                drops.length = columns;
             }
         });
 
@@ -380,9 +384,8 @@
 
             terminalBody.appendChild(div);
 
-            let activeCursor = terminalBody.querySelector('.cursor');
-            if (!activeCursor) {
-                activeCursor = document.createElement('span');
+            const activeCursor = terminalBody.querySelector('.cursor') || document.createElement('span');
+            if (!activeCursor.parentElement) {
                 activeCursor.className = 'cursor';
             }
             div.appendChild(activeCursor);
