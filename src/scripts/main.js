@@ -302,46 +302,79 @@
 
         const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'.split('');
         const fontSize = 14;
-        let columns = canvas.width / fontSize;
+        let columns = Math.floor(canvas.width / fontSize);
         let drops = [];
         
         for (let i = 0; i < columns; i++) {
             drops[i] = Math.random() * -100;
         }
-
+        
+        // Cache the accent color — only re-read on resize
+        const rootStyle = getComputedStyle(document.documentElement);
+        let phosphorColor = rootStyle.getPropertyValue('--accent-primary').trim() || '#00ff88';
+        
+        let resizeTimer;
         window.addEventListener('resize', () => {
-            resizeCanvas();
-            columns = Math.floor(canvas.width / fontSize);
-            if (drops.length < columns) {
-                while (drops.length < columns) {
-                    drops.push(Math.random() * -100);
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                resizeCanvas();
+                columns = Math.floor(canvas.width / fontSize);
+                if (drops.length < columns) {
+                    while (drops.length < columns) {
+                        drops.push(Math.random() * -100);
+                    }
+                } else {
+                    drops.length = columns;
                 }
-            } else {
-                drops.length = columns;
-            }
+                phosphorColor = rootStyle.getPropertyValue('--accent-primary').trim() || '#00ff88';
+            }, 150);
         });
 
-        function drawMatrix() {
+        let matrixRunning = true;
+        let lastMatrixFrame = 0;
+        const MATRIX_FRAME_INTERVAL = 35; // ms between frames (~28fps)
+        
+        function drawMatrix(timestamp) {
+            if (!matrixRunning) return;
+            
+            // Throttle to ~28fps using rAF
+            if (timestamp - lastMatrixFrame < MATRIX_FRAME_INTERVAL) {
+                requestAnimationFrame(drawMatrix);
+                return;
+            }
+            lastMatrixFrame = timestamp;
+            
             ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            const rootStyle = getComputedStyle(document.documentElement);
-            const phosphorColor = rootStyle.getPropertyValue('--accent-primary').trim() || '#00ff88';
+            
             ctx.fillStyle = phosphorColor;
             ctx.font = fontSize + 'px monospace';
-
+            
             for (let i = 0; i < drops.length; i++) {
                 const text = chars[Math.floor(Math.random() * chars.length)];
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
+                
                 if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
                 }
                 drops[i]++;
             }
+            
+            requestAnimationFrame(drawMatrix);
         }
-
-        setInterval(drawMatrix, 35);
+        
+        requestAnimationFrame(drawMatrix);
+        
+        // Pause matrix when tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                matrixRunning = false;
+            } else {
+                matrixRunning = true;
+                lastMatrixFrame = 0;
+                requestAnimationFrame(drawMatrix);
+            }
+        });
     }
 
     // Terminal Animation
@@ -390,15 +423,33 @@
     ];
 
     let lineIndex = 0;
+    let terminalCycles = 0;
+    const MAX_TERMINAL_CYCLES = 2; // Stop looping after 2 full cycles
     const terminalBody = document.getElementById('aboutTerminalBody');
 
     if (terminalBody) {
+        let terminalTimer = null;
+        let terminalVisible = false;
+        
+        // Only run terminal animation when visible
+        const terminalObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                terminalVisible = entry.isIntersecting;
+            });
+        }, { threshold: 0.1 });
+        terminalObserver.observe(terminalBody);
+        
         function addTerminalLine() {
             if (lineIndex >= terminalLines.length) {
+                terminalCycles++;
+                if (terminalCycles >= MAX_TERMINAL_CYCLES) {
+                    // Stop looping — leave final state visible
+                    return;
+                }
                 lineIndex = 0;
-                setTimeout(() => {
+                terminalTimer = setTimeout(() => {
                     terminalBody.innerHTML = '';
-                    setTimeout(addTerminalLine, 500);
+                    terminalTimer = setTimeout(addTerminalLine, 500);
                 }, 4000);
                 return;
             }
@@ -432,10 +483,10 @@
 
             lineIndex++;
             const delay = line.type === 'command' ? 1200 : (Math.random() * 300 + 100);
-            setTimeout(addTerminalLine, delay);
+            terminalTimer = setTimeout(addTerminalLine, delay);
         }
-
-        setTimeout(addTerminalLine, 1000);
+        
+        terminalTimer = setTimeout(addTerminalLine, 1000);
     }
 
     // Cursor Trail (optimized: GPU transforms, idle pause)
