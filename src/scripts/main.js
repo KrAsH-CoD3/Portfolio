@@ -141,7 +141,7 @@
         function scheduleGlitch() {
             const delay = 4000 + Math.random() * 6000;
             setTimeout(() => {
-                if (Math.random() > 0.3) triggerGlitchBurst();
+                if (!document.hidden && Math.random() > 0.3) triggerGlitchBurst();
                 scheduleGlitch();
             }, delay);
         }
@@ -192,35 +192,33 @@
         sectionTitles.forEach(title => observer.observe(title));
     }
 
-        // Global Random Glitch Bursts
-        const scanlines = document.querySelector('.scanlines');
-        if (scanlines) {
-            let glitchTimerId = null;
-            
-            function triggerGlobalGlitch() {
-                if (document.hidden) {
-                    // Don't glitch while tab is hidden; reschedule
-                    glitchTimerId = setTimeout(triggerGlobalGlitch, 8000);
-                    return;
-                }
-                
-                // Apply intense glitch (scanlines only, no body filter)
-                scanlines.classList.add('glitch-intense');
-                document.body.classList.add('global-glitch-active');
-                
-                const duration = 150 + Math.random() * 250;
-                
-                setTimeout(() => {
-                    scanlines.classList.remove('glitch-intense');
-                    document.body.classList.remove('global-glitch-active');
-                    
-                    const nextBurst = 8000 + Math.random() * 15000;
-                    glitchTimerId = setTimeout(triggerGlobalGlitch, nextBurst);
-                }, duration);
+    // Global Random Glitch Bursts
+    const scanlines = document.querySelector('.scanlines');
+    if (scanlines) {
+        let glitchTimerId = null;
+
+        function triggerGlobalGlitch() {
+            if (document.hidden) {
+                glitchTimerId = setTimeout(triggerGlobalGlitch, 8000);
+                return;
             }
-            
-            glitchTimerId = setTimeout(triggerGlobalGlitch, 5000);
+
+            scanlines.classList.add('glitch-intense');
+            document.body.classList.add('global-glitch-active');
+
+            const duration = 150 + Math.random() * 250;
+
+            setTimeout(() => {
+                scanlines.classList.remove('glitch-intense');
+                document.body.classList.remove('global-glitch-active');
+
+                const nextBurst = 8000 + Math.random() * 15000;
+                glitchTimerId = setTimeout(triggerGlobalGlitch, nextBurst);
+            }, duration);
         }
+
+        glitchTimerId = setTimeout(triggerGlobalGlitch, 5000);
+    }
 
     // Hero Typing Effect (pauses when hero not visible)
     const typedRoleElement = document.querySelector('.typed-role');
@@ -257,7 +255,6 @@
         function typeRole() {
             typingTimerId = null;
             if (!heroVisible || document.hidden) {
-                // Will be restarted by observer or visibilitychange
                 return;
             }
             
@@ -285,11 +282,18 @@
             typingTimerId = setTimeout(typeRole, typingDelay);
         }
         
+        // Resume typing when tab becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && heroVisible && !typingTimerId) {
+                typingTimerId = setTimeout(typeRole, typingDelay);
+            }
+        });
+        
         // Start typing effect after reveal has stabilized
         typingTimerId = setTimeout(typeRole, 2000); 
     }
 
-    // Matrix Rain Effect
+    // Matrix Rain Effect (optimized: rAF + visibility gating)
     const canvas = document.getElementById('matrix-canvas');
     if (canvas) {
         const ctx = canvas.getContext('2d');
@@ -308,11 +312,11 @@
         for (let i = 0; i < columns; i++) {
             drops[i] = Math.random() * -100;
         }
-        
+
         // Cache the accent color — only re-read on resize
         const rootStyle = getComputedStyle(document.documentElement);
         let phosphorColor = rootStyle.getPropertyValue('--accent-primary').trim() || '#00ff88';
-        
+
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
@@ -330,49 +334,59 @@
             }, 150);
         });
 
-        let matrixRunning = true;
+        let matrixRAFId = null;
         let lastMatrixFrame = 0;
-        const MATRIX_FRAME_INTERVAL = 35; // ms between frames (~28fps)
-        
+        const MATRIX_FRAME_INTERVAL = 35;
+
         function drawMatrix(timestamp) {
-            if (!matrixRunning) return;
-            
-            // Throttle to ~28fps using rAF
+            // Throttle to ~28fps
             if (timestamp - lastMatrixFrame < MATRIX_FRAME_INTERVAL) {
-                requestAnimationFrame(drawMatrix);
+                matrixRAFId = requestAnimationFrame(drawMatrix);
                 return;
             }
             lastMatrixFrame = timestamp;
-            
+
             ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             ctx.fillStyle = phosphorColor;
             ctx.font = fontSize + 'px monospace';
-            
+
             for (let i = 0; i < drops.length; i++) {
                 const text = chars[Math.floor(Math.random() * chars.length)];
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                
+
                 if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
                 }
                 drops[i]++;
             }
-            
-            requestAnimationFrame(drawMatrix);
+
+            matrixRAFId = requestAnimationFrame(drawMatrix);
         }
-        
-        requestAnimationFrame(drawMatrix);
-        
-        // Pause matrix when tab is hidden
+
+        function startMatrix() {
+            if (matrixRAFId !== null) return; // already running
+            lastMatrixFrame = 0;
+            matrixRAFId = requestAnimationFrame(drawMatrix);
+        }
+
+        function stopMatrix() {
+            if (matrixRAFId !== null) {
+                cancelAnimationFrame(matrixRAFId);
+                matrixRAFId = null;
+            }
+        }
+
+        // Start immediately
+        startMatrix();
+
+        // Pause/resume on tab visibility
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                matrixRunning = false;
+                stopMatrix();
             } else {
-                matrixRunning = true;
-                lastMatrixFrame = 0;
-                requestAnimationFrame(drawMatrix);
+                startMatrix();
             }
         });
     }
